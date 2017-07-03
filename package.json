@@ -1,0 +1,22 @@
+{
+  "name": "kcsite",
+  "version": "1.0.0",
+  "description": "科创平台官网",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gmono/kcsite.git"
+  },
+  "author": "CLF_Studio",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/gmono/kcsite/issues"
+  },
+  "homepage": "https://github.com/gmono/kcsite#readme",
+  "dependencies": {
+    "koa": "^2.3.0"
+  }
+}
