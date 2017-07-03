@@ -3,6 +3,13 @@ const Koa=require("koa")
 //全部用router中间件实现
 const Router=require("koa-router")
 const createStatic=require("koa-static")
+//数据库配置
+let mongoose=require("mongoose")
+mongoose.connect("mongodb://localhost/test")
+mongoose.Promise=Promise
+global.SiteDB=mongoose
+
+//以下进行接口配置
 const app=new Koa()
 
 
