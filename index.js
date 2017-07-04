@@ -6,6 +6,7 @@ const createStatic=require("koa-static")
 //数据库配置
 let mongoose=require("mongoose")
 mongoose.connect("mongodb://localhost/test")
+//设置为默认Promise
 mongoose.Promise=Promise
 global.SiteDB=mongoose
 
@@ -28,8 +29,8 @@ const apiRouter=new Router()
 
 
 //用户模块
-const UserManager=require("./serverModules/UserManager.js")
-apiRouter.use("/user",UserManager.routes(),UserManager.allowedMethods())
+const Users=require("./serverModules/Users.js")
+apiRouter.use("/user",Users.routes(),Users.allowedMethods())
 //...
 
 //添加api路由

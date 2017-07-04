@@ -15,10 +15,18 @@ mongoose=global.SiteDB
 // let parser=require("koa-bodyparser")
 // Route.use(parser())
 
-let TestModel=mongoose.model("TestModel",{
-    name:String,
-    password:String
+//此处 type为用户组
+//目前暂定 0为总管理员 1为普通管理员 2为普通用户
+let UserScheme=new mongoose.Schema({
+    username:{type:String,index:true},
+    password:String,
+    type:{type:Number,index:true},
+    nickname:{type:String,index:true},
+    age:{type:Number,index:true},
+    description:String,
+    other:mongoose.SchemaTypes.Mixed
 })
+let UserModel=mongoose.model("Users",UserScheme)
 Route.all("/getinfo",async (ctx,next)=>{
     ctx.body=await TestModel.find().exec()
 })
@@ -30,6 +38,7 @@ let upload=multer({
     dest:"./serverModules/UserManager/file"
 })
 Route.post("/add",upload.single("file"),async (ctx,next)=>{
+    //此三个对象为file对象中的成员 具体成员需要在debug时查看
     const {originalname,path,mimetype}=ctx.req.file;
 
     ctx.body=originalname;
