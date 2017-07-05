@@ -27,10 +27,21 @@ top.all("/",createStatic(path.join(__dirname,"./static")))
 const apiRouter=new Router()
 
 
-//用户模块
-const Users=require("./serverModules/Users.js")
-apiRouter.use("/user",Users.routes(),Users.allowedMethods())
-//...
+//加载所有模块
+const assert=require("assert")
+const ModuleList=require("./ModuleList")
+let InitList=[]
+for(let item of ModuleList){
+    const mod=require(`./serverModules/${item.mod}.js`)
+    assert.notEqual(mod.Route,null)
+    apiRouter.use(item.url,mod.Route.routes(),mod.Route.allowedMethods())
+    //如果有初始化函数就执行初始化
+    if(mod.Init) InitList.push(mod.Init);
+}
+//执行初始化
+for(let fun of InitList){
+    fun();
+}
 
 //添加api路由
 top.use("/api",apiRouter.routes(),apiRouter.allowedMethods())

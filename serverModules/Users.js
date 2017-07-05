@@ -84,4 +84,9 @@ Route.get("/getlogin",async (ctx,next)=>{
     else ctx.body=`当前登录用户：${uname}`;
 })
 
-module.exports=Route;
+module.exports={
+    Route:Route,
+    Init(){
+        //此处写初始化函数 初始化函数调用时机在所有模块Require后
+    }
+}
