@@ -20,6 +20,18 @@ Route.use(session({
 let parser=require("koa-bodyparser")
 Route.use(parser())
 
+//此处 Admin为管理 如学院领导等
+// Master为系统管理员 比如技术人员 Master只能由内部录入用户
+//Admin可以操作Student 和Techer用户
+//Admin可以由Master添加
+//Normal为非本校人员 拥有最低权限
+const UserType={
+    Master:0,
+    Admin:1,
+    Techer:2,
+    Student:3,
+    Normal:4
+}
 //此处 type为用户组
 //目前暂定 0为总管理员 1为普通管理员 2为普通用户
 //img为用户头像的文件名 用户头像全部储存在一个特定目录中
@@ -71,22 +83,128 @@ Route.post("/login",async (ctx,next)=>{
     assert.notEqual(password,null)
     // assert.notEqual(sectext,null)
     //
-    let userinfo=await UserModel.find({username:username}).exec()
+    let userinfo=await UserModel.findOne({username:username}).exec()
     if(userinfo==null) ctx.body=LoginState.NoUser
     if(userinfo.password!=password) ctx.body=LoginState.ErrorPass;
     //设置session
     ctx.session.loginedUser=username;
     ctx.body=LoginState.Success
 })
+//获得当前登录的用户 若未登录则返回 null 
+//全部以json方式返回
 Route.get("/getlogin",async (ctx,next)=>{
     let uname=ctx.session.loginedUser;
-    if(uname==null) ctx.body="尚未登录";
-    else ctx.body=`当前登录用户：${uname}`;
+    if(uname==null) ctx.body=JSON.stringify(null);
+    else ctx.body=JSON.stringify(uname);
+})
+//登出
+Route.get("/logout",async (ctx,next)=>{
+    let uname=ctx.session.loginedUser;
+    if(uname==null) return;
+    ctx.session.loginedUser=null;
 })
 
+//以下为用户资料相关
+//以下为工具函数
+//获取用户信息不包括密码
+async function GetUserInfo(uname)
+{
+    assert.notEqual(uname,null)
+    let res=await (UserModel.findOne({username:uname}).exec())
+    if(res==null) return;
+    let obj=res.toObject()
+    obj.password=undefined
+    let str=JSON.stringify(obj)
+    return str
+}
+//设置一个用户的资料（不包括密码）
+async function SetUserInfo(uname,nobj)
+{
+    assert.notEqual(uname,null)
+    let res=await (UserModel.findOne({username:uname}).exec())
+    if(res==null) return;
+    let obj=res.toObject()
+    // for(let item in nobj){
+    //     if(item in obj&&item!="password"){
+    //         obj[item]=nobj[item];
+    //     }
+    // }
+    nobj["password"]=undefined;
+    //更新信息 不更新password
+    res.update(nobj)
+    res.save()
+}
+/**
+ * 用旧密码设置新密码
+ * @param {String} uname 
+ * @param {String} opass 
+ * @param {String} npass 
+ * @return {Boolean} 是否重置成功
+ */
+async function SetUserPassword(uname,opass,npass)
+{
+    assert.notEqual(uname,null)
+    let res=await (UserModel.findOne({username:uname}).exec())
+    if(res==null) return;
+    //
+    let obj=res.toObject()
+    if(obj.password==opass){
+        obj.password=npass;
+        return true;
+    }
+    else return false;
+}
+
+async function AddUser(infoobj)
+{
+    let req=[
+        "username",
+        "password",
+        "nickname",
+        "type"
+    ]
+    for(let a of req){
+        if(!(a in infoobj)) return false;
+    }
+    let nobj=new UserModel(infoboj);
+    nobj.save()
+}
+//获取当前登录用户的相关资料
+Route.get("/getInfo",async (ctx,next)=>{
+    let uname=ctx.session.loginedUser;
+    if(uname==null) ctx.body=JSON.stringify(null);
+    else ctx.body=GetUserInfo(uname);
+})
+//设置当前登录的用户信息
+Route.post("/setInfo",async (ctx,next)=>{
+    let uname=ctx.session.loginedUser;
+    if(uname==null) ctx.body=JSON.stringify(false);
+    else{
+        //设置 从request的body里 即bodyparser解析出的对象里更新
+        let obj=ctx.request.body;
+        SetUserInfo(uname,obj);
+        return true;
+    }
+})
+//以下为管理员接口
+//此为获取某个特定用户的资料 不包括密码
+Route.get("/getUserInfo",async (ctx,next)=>{
+    let uname=ctx.request.query["username"]
+    if(uname==null) ctx.body=JSON.stringify(null);
+    else ctx.body=GetUserInfo(uname);
+})
+//公开接口
+global.Users={
+    AddUser,
+    SetUserPassword,
+    SetUserInfo,
+    GetUserInfo
+}
+//
 module.exports={
     Route:Route,
     Init(){
         //此处写初始化函数 初始化函数调用时机在所有模块Require后
+        //这里可以获得其他模块公开的接口
     }
 }
