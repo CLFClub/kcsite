@@ -217,20 +217,17 @@ async function WriteFilter(obj,outype,wutype)
 const LoginState={
     Success:0,
     NoUser:1,
-    ErrorPass:2
+    ErrorPass:2,
+    Error:3
 }
 Route.post("/login",async (ctx,next)=>{
     let body=ctx.request.body
     //读取如下字段
     let username=body["username"];
     let password=body["password"];
-    //此为在客户端加密的数据的base64文本 服务端进行同样过程后比对结果
-    //目前做明文登录 省略此过程
-    let sectext=body["sectext"];
     //不能为空
-    assert.notEqual(username,null)
-    assert.notEqual(password,null)
-    // assert.notEqual(sectext,null)
+    if(username==null||password==null){ctx.body=LoginState.Error;return;}
+    password=GetPassword(password);//密码解码
     //
     let userinfo=await UserModel.findOne({username:username}).exec()
     if(userinfo==null) ctx.body=LoginState.NoUser
@@ -307,7 +304,7 @@ Route.get("/getUserInfo",async (ctx,next)=>{
 Route.post("/setUserInfo",async (ctx,next)=>{
     let body=ctx.request.body;
     let uname=body.username;
-    assert.notEqual(uname,null)
+    if(uname==null) {ctx.body=false;return;}
     let wres=await UserModel.findOne({username:uname}).exec()
     let nowuser=ctx.session.loginedUser;
     if(nowuser==null) {ctx.body=false;return;}
@@ -315,23 +312,39 @@ Route.post("/setUserInfo",async (ctx,next)=>{
     let nobj=WriteFilter(body,nres.type,wres.type)
     SetUserInfo(uname,nobj);
 })
-
+//Admin特权接口
+Route.post("/addUser",async (ctx,next)=>{
+    let luname=ctx.session.loginedUser;
+    if(luname==null) {ctx.body=false;return;}
+    if(luname<=UserType.Admin){
+        //添加用户
+        let body=ctx.request.body;
+        if(body==null||body.password==null){ctx.body=false;return;}
+        //密码解码
+        body.password=GetPassword(body.password)
+        AddUser(body)
+        ctx.body=SVGFETurbulenceElement
+    }
+    ctx.body=false;
+});
 //Master特权接口
 Route.post("/setUserPass",async (ctx,next)=>{
     let luname=ctx.session.loginedUser;
+    if(luname==null) {ctx.body=false;return;}
     let res=await UserModel.findOne({username:luname}).exec()
     if(res.type==UserType.Master){
         let body=ctx.request.body;
         //body:{username:xx,password:xx}
         let un=body.username;
         let ps=GetPassword(body.password);
-        if(un==null&&ps==null) return false;
+        if(un==null&&ps==null) {ctx.body=false;return;}
         let wres=await UserModel.findOne({username:un}).exec()
         wres.password=ps;
         wres.save()
-        return true;
+        ctx.body=true
+        return;
     }
-    return false;
+    ctx.body=false;
 })
 //公开接口
 global.Users={
