@@ -136,10 +136,9 @@ async function SetUserPassword(uname,opass,npass)
     assert.notEqual(uname,null)
     let res=await (UserModel.findOne({username:uname}).exec())
     if(res==null) return;
-    //
-    let obj=res.toObject()
-    if(obj.password==opass){
-        obj.password=npass;
+    if(res.password==opass){
+        res.password=npass;
+        res.save()
         return true;
     }
     else return false;
@@ -279,9 +278,7 @@ Route.post("/resetPass",async (ctx,next)=>{
     if(now==null||newp==null) {ctx.body=false;return;}
     let npas=GetPassword(now);
     let newpas=GetPassword(nowp);
-    if(res.password!=npas) {ctx.body=false;return;}
-    res.password=newpas;
-    res.save()
+    ctx.body=await SetUserPassword(luname,npas,newpas)
 })
 //上传头像 返回头像文件名
 let upload=multer({
@@ -366,7 +363,8 @@ global.Users={
     AddUser,
     SetUserPassword,
     SetUserInfo,
-    GetUserInfo
+    GetUserInfo,
+    RemoveUser
 }
 //
 module.exports={

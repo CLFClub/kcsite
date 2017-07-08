@@ -5,14 +5,72 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Document</title>
+    <script
+  src="https://code.jquery.com/jquery-3.2.1.js"
+  integrity="sha256-DZAnKJ/6XZ9si04Hgrsxu/8s717jcIzLy3oi35EouyE="
+  crossorigin="anonymous"></script>
+    <script>
+    const LoginState={
+    Success:0,
+    NoUser:1,
+    ErrorPass:2,
+    Error:3
+    }
+
+    function getNowUser(isdetil)
+    {
+        $.ajax({
+            method:"GET",
+            url:"/api/user/getInfo",
+            success(result){
+                let obj=JSON.parse(result)
+                if(obj==null) return;
+                if(!isdetil) alert(`当前登录用户：${obj.username}`);
+                else {
+                    let str="";
+                    for(let i in obj)
+                    {
+                        str+=`${i}:${obj[i]}\n`;
+                    }
+                    alert(str)
+                }
+            }
+        })
+    }
+        function login()
+        {
+            let form=document.getElementById("login")
+            let un=form.username.value;
+            let pas=form.password.value;
+            $.ajax({
+                method:"POST",
+                url:"/api/user/login",
+                data:{
+                    username:un,
+                    password:pas
+                },
+                success(result){
+                    let state=Number.parseInt(result)
+                    if(state==LoginState.Success)
+                    {
+                        alert("登录成功")
+                        
+                    }
+                    else alert("登录失败")
+                }
+            })
+        }
+    </script>
 </head>
 <body>
     <h1>asdfasdf</h1>
-    <form action="/api/user/login" method="post" target="_blank">
+    <form id="login">
     <input name="username"><br>
     <input type="password" name="password">
     <br>
-    <input type="submit" value="提交">
+    <input type="button" value="提交" onclick="login()">
     </form>
+<button onclick="getNowUser(false)">查看当前登录用户</button>
+<button onclick="getNowUser(true)">查看当前登录用户信息</button>
 </body>
 </html>
