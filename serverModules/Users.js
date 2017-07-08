@@ -153,17 +153,17 @@ async function SetUserPassword(uname,opass,npass)
 async function ReadFilter(obj,utype)
 {
     let BanType={};
-    BanType[UserType.Master]={}
-    BanType[UserType.Admin]={password}
-    BanType[UserType.Techer]={password}
-    BanType[UserType.Student]={password,email,pnumber}
-    BanType[UserType.Normal]={password,email,pnumber}
+    BanType[UserType.Master]=new Set()
+    BanType[UserType.Admin]=new Set(["password"])
+    BanType[UserType.Techer]=new Set(["password"])
+    BanType[UserType.Student]=new Set(["password","email","pnumber"])
+    BanType[UserType.Normal]=new Set(["password","email","pnumber"])
     //以上为每个用户类型的禁止列表
     let bant=BanType[utype];
     assert.notEqual(bant,null)
     let ret={};
     for(let item in obj){
-        if(!(item in bant)){
+        if(!bant.has(item)){
             ret[item]=obj[item]
         }
     }
@@ -294,15 +294,17 @@ Route.post("/uploadImg",upload.single("file"),async (ctx,next)=>{
     ctx.body=originalname;
     ctx.body+=JSON.stringify(ctx.req.body)
 })
-//获得某个特定用户的资料 根据用户级别过滤
+//获得某个特定用户的资料 根据当前登录用户级别过滤
 Route.get("/getUserInfo",async (ctx,next)=>{
     let uname=ctx.request.query["username"]
+    let luname=ctx.session.loginedUser;
+    if(luname==null) {ctx.body=JSON.stringify(null);return;}
     if(uname==null) ctx.body=JSON.stringify(null);
     else{
-        let res=await UserModel.findOne({username:uname}).exec()
+        let res=await UserModel.findOne({username:luname}).exec()
         let utype=res["type"]
         ctx.body=await ReadFilter(await GetUserInfo(uname),utype)
-        ctx.body=JSON.stringify(ctx.body)
+        // ctx.body=JSON.stringify(ctx.body)
     }
 })
 //设置某个特定用户的资料 根据用户级别控制
