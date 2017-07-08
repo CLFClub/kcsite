@@ -50,20 +50,9 @@ let UserScheme=new mongoose.Schema({
 })
 //用户信息collection
 let UserModel=mongoose.model("Users",UserScheme)
-//这东西似乎可以解析对象也可以解析文件数据
-//文件数据为ctx.req.file
-//kv数据为ctx.req.body
-//有文件时可以用这个 其他时候太麻烦
-let upload=multer({
-    dest:"./serverModules/Users/file"
-})
-Route.post("/add",upload.single("file"),async (ctx,next)=>{
-    //此三个对象为file对象中的成员 具体成员需要在debug时查看
-    const {originalname,path,mimetype}=ctx.req.file;
 
-    ctx.body=originalname;
-    ctx.body+=JSON.stringify(ctx.req.body)
-})
+
+
 
 
 
@@ -288,7 +277,17 @@ Route.post("/resetPass",async (ctx,next)=>{
     res.password=newpas;
     res.save()
 })
+//上传头像 返回头像文件名
+let upload=multer({
+    dest:"./static/UserImg"
+})
+Route.post("/add",upload.single("file"),async (ctx,next)=>{
+    //此三个对象为file对象中的成员 具体成员需要在debug时查看
+    const {originalname,path,mimetype}=ctx.req.file;
 
+    ctx.body=originalname;
+    ctx.body+=JSON.stringify(ctx.req.body)
+})
 //获得某个特定用户的资料 根据用户级别过滤
 Route.get("/getUserInfo",async (ctx,next)=>{
     let uname=ctx.request.query["username"]
