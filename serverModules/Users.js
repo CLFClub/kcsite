@@ -111,8 +111,8 @@ async function AddUser(infoobj)
         if(!(a in infoobj)) return false;
     }
     //如果已经有了就返回false
-    if(await UserModel.findOne({username:infoobj["username"]})) return false;
-    let nobj=new UserModel(infoboj);
+    if(await UserModel.findOne({username:infoobj["username"]}).exec()) return false;
+    let nobj=new UserModel(infoobj);
     nobj.save()
     return true;
 }
