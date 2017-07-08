@@ -42,7 +42,10 @@ let UserScheme=new mongoose.Schema({
     nickname:{type:String,index:true},
     age:{type:Number,index:true},
     description:String,
+    email:String,
+    pnumber:String,
     img:String,
+    orginzation:[],
     other:mongoose.SchemaTypes.Mixed
 })
 //用户信息collection
@@ -64,6 +67,152 @@ Route.post("/add",upload.single("file"),async (ctx,next)=>{
 
 
 
+
+//密码解码
+async function GetPassword(base64text)
+{
+    return base64text;
+}
+//密码格式检测
+async function CheckPassword(pas)
+{
+    return true;
+}
+
+//以下为用户资料相关
+
+//以下为总工具函数
+//获得某个用户的完整信息对象 包括密码
+async function GetUserInfo(uname)
+{
+    assert.notEqual(uname,null)
+    let res=await (UserModel.findOne({username:uname}).exec())
+    if(res==null) return;
+    let obj=res.toObject()
+    return obj
+}
+//设置一个用户的资料（不包括密码）
+//如果要强制设置密码 设置forcePass为true
+async function SetUserInfo(uname,nobj,forcePass)
+{
+    assert.notEqual(uname,null)
+    let res=await (UserModel.findOne({username:uname}).exec())
+    if(res==null) return;
+    // let obj=res.toObject()
+    for(let item in nobj){
+        if(item in res&&item!="password"){
+            res[item]=nobj[item];
+        }
+    }
+    //强制更新密码
+    if(forcePass==true)  res["password"]=obj["password"];
+    res.save()
+}
+//添加一个用户
+async function AddUser(infoobj)
+{
+    let req=[
+        "username",
+        "password",
+        "nickname",
+        "type"
+    ]
+    for(let a of req){
+        if(!(a in infoobj)) return false;
+    }
+    //如果已经有了就返回false
+    if(await UserModel.findOne({username:infoobj["username"]})) return false;
+    let nobj=new UserModel(infoboj);
+    nobj.save()
+    return true;
+}
+//删除一个用户
+async function RemoveUser(uname)
+{
+    UserModel.remove({username:uname});
+}
+
+
+//以下为用户自己使用的工具函数
+/**
+ * 用旧密码设置新密码
+ * @param {String} uname 
+ * @param {String} opass 
+ * @param {String} npass 
+ * @return {Boolean} 是否重置成功
+ */
+async function SetUserPassword(uname,opass,npass)
+{
+    assert.notEqual(uname,null)
+    let res=await (UserModel.findOne({username:uname}).exec())
+    if(res==null) return;
+    //
+    let obj=res.toObject()
+    if(obj.password==opass){
+        obj.password=npass;
+        return true;
+    }
+    else return false;
+}
+
+//以下为第三方操作函数
+//以下为显示信息过滤函数
+//根据用户type进行个人信息过滤
+//信息读取过滤
+//此过滤器用于对第三方过滤个人资料
+async function ReadFilter(obj,utype)
+{
+    let BanType={};
+    BanType[UserType.Master]={}
+    BanType[UserType.Admin]={password}
+    BanType[UserType.Techer]={password}
+    BanType[UserType.Student]={password,email,pnumber}
+    BanType[UserType.Normal]={password,email,pnumber}
+    //以上为每个用户类型的禁止列表
+    let bant=BanType[utype];
+    assert.notEqual(bant,null)
+    let ret={};
+    for(let item in obj){
+        if(!(item in bant)){
+            ret[item]=obj[item]
+        }
+    }
+    return ret;
+}
+//写入权限过滤
+//用于对第三方对个人资料写入进行过滤
+//由outype级别的用户对wutype级别的用户进行操作
+async function WriteFilter(obj,outype,wutype)
+{
+    //同级别或更低级别的用户不能对高级别用户进行任何操作
+    //使得老师与学生的第三方写入权限相同
+    if(outype==UserType.Techer) outype=UserType.Student;
+    if(outype>=wutype) return null;
+    //第三方写入不允许写入密码
+    let ret=JSON.parse(JSON.stringify(obj))
+    ret["password"]=undefined;
+    //防止提权
+    if(ret["type"]<outype) return null;
+    return ret;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//webapi区域
 //登录接口
 const LoginState={
     Success:0,
@@ -103,77 +252,16 @@ Route.get("/logout",async (ctx,next)=>{
     if(uname==null) return;
     ctx.session.loginedUser=null;
 })
-
-//以下为用户资料相关
-//以下为工具函数
-//获取用户信息不包括密码
-async function GetUserInfo(uname)
-{
-    assert.notEqual(uname,null)
-    let res=await (UserModel.findOne({username:uname}).exec())
-    if(res==null) return;
-    let obj=res.toObject()
-    obj.password=undefined
-    let str=JSON.stringify(obj)
-    return str
-}
-//设置一个用户的资料（不包括密码）
-async function SetUserInfo(uname,nobj)
-{
-    assert.notEqual(uname,null)
-    let res=await (UserModel.findOne({username:uname}).exec())
-    if(res==null) return;
-    let obj=res.toObject()
-    // for(let item in nobj){
-    //     if(item in obj&&item!="password"){
-    //         obj[item]=nobj[item];
-    //     }
-    // }
-    nobj["password"]=undefined;
-    //更新信息 不更新password
-    res.update(nobj)
-    res.save()
-}
-/**
- * 用旧密码设置新密码
- * @param {String} uname 
- * @param {String} opass 
- * @param {String} npass 
- * @return {Boolean} 是否重置成功
- */
-async function SetUserPassword(uname,opass,npass)
-{
-    assert.notEqual(uname,null)
-    let res=await (UserModel.findOne({username:uname}).exec())
-    if(res==null) return;
-    //
-    let obj=res.toObject()
-    if(obj.password==opass){
-        obj.password=npass;
-        return true;
-    }
-    else return false;
-}
-
-async function AddUser(infoobj)
-{
-    let req=[
-        "username",
-        "password",
-        "nickname",
-        "type"
-    ]
-    for(let a of req){
-        if(!(a in infoobj)) return false;
-    }
-    let nobj=new UserModel(infoboj);
-    nobj.save()
-}
 //获取当前登录用户的相关资料
+//自己获取自己的资料 不包括密码
 Route.get("/getInfo",async (ctx,next)=>{
     let uname=ctx.session.loginedUser;
     if(uname==null) ctx.body=JSON.stringify(null);
-    else ctx.body=GetUserInfo(uname);
+    else{
+        let info=await GetUserInfo(uname);
+        info["password"]=undefined;
+        ctx.body=JSON.stringify(info);
+    }
 })
 //设置当前登录的用户信息
 Route.post("/setInfo",async (ctx,next)=>{
@@ -182,16 +270,68 @@ Route.post("/setInfo",async (ctx,next)=>{
     else{
         //设置 从request的body里 即bodyparser解析出的对象里更新
         let obj=ctx.request.body;
+        //自己设置自己的信息 不包括用户type和密码
+        obj["type"]=undefined;
+        obj["password"]=undefined;
         SetUserInfo(uname,obj);
         return true;
     }
 })
-//以下为管理员接口
-//此为获取某个特定用户的资料 不包括密码
+//重置密码
+Route.post("/resetPass",async (ctx,next)=>{
+    let luname=ctx.session.loginedUser;
+    let res=await UserModel.findOne({username:luname}).exec()
+    let body=ctx.request.body;
+    let now=body.nowPass;
+    let newp=body.newPass;
+    if(now==null||newp==null) {ctx.body=false;return;}
+    let npas=GetPassword(now);
+    let newpas=GetPassword(nowp);
+    if(res.password!=npas) {ctx.body=false;return;}
+    res.password=newpas;
+    res.save()
+})
+
+//获得某个特定用户的资料 根据用户级别过滤
 Route.get("/getUserInfo",async (ctx,next)=>{
     let uname=ctx.request.query["username"]
     if(uname==null) ctx.body=JSON.stringify(null);
-    else ctx.body=GetUserInfo(uname);
+    else{
+        let res=await UserModel.findOne({username:uname}).exec()
+        let utype=res["type"]
+        ctx.body=await ReadFilter(GetUserInfo(uname),utype)
+    }
+})
+//设置某个特定用户的资料 根据用户级别控制
+//不能更改密码
+Route.post("/setUserInfo",async (ctx,next)=>{
+    let body=ctx.request.body;
+    let uname=body.username;
+    assert.notEqual(uname,null)
+    let wres=await UserModel.findOne({username:uname}).exec()
+    let nowuser=ctx.session.loginedUser;
+    if(nowuser==null) {ctx.body=false;return;}
+    let nres=await UserModel.findOne({username:nowuser}).exec()
+    let nobj=WriteFilter(body,nres.type,wres.type)
+    SetUserInfo(uname,nobj);
+})
+
+//Master特权接口
+Route.post("/setUserPass",async (ctx,next)=>{
+    let luname=ctx.session.loginedUser;
+    let res=await UserModel.findOne({username:luname}).exec()
+    if(res.type==UserType.Master){
+        let body=ctx.request.body;
+        //body:{username:xx,password:xx}
+        let un=body.username;
+        let ps=GetPassword(body.password);
+        if(un==null&&ps==null) return false;
+        let wres=await UserModel.findOne({username:un}).exec()
+        wres.password=ps;
+        wres.save()
+        return true;
+    }
+    return false;
 })
 //公开接口
 global.Users={
