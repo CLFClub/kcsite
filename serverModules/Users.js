@@ -82,6 +82,7 @@ async function GetUserInfo(uname)
 }
 //设置一个用户的资料（不包括密码）
 //如果要强制设置密码 设置forcePass为true
+//注意这个函数可以更改用户名
 async function SetUserInfo(uname,nobj,forcePass)
 {
     assert.notEqual(uname,null)
@@ -175,12 +176,15 @@ async function WriteFilter(obj,outype,wutype)
 {
     //同级别或更低级别的用户不能对高级别用户进行任何操作
     //使得老师与学生的第三方写入权限相同
+    //master拥有完全控制权
+    if(outype==UserType.Master) return obj;
     if(outype==UserType.Techer) outype=UserType.Student;
     if(outype>=wutype) return null;
-    //第三方写入不允许写入密码
+    //第三方写入不允许写入密码和用户名
     let ret=JSON.parse(JSON.stringify(obj))
     ret["password"]=undefined;
-    //防止提权
+    ret["username"]=undefined;
+    //防止提权 新type不能高于写入者自己的type
     if(ret["type"]<outype) return null;
     return ret;
 }
@@ -250,6 +254,7 @@ Route.get("/getInfo",async (ctx,next)=>{
     }
 })
 //设置当前登录的用户信息
+//此接口不能设置密码 用户类型 用户名
 Route.post("/setInfo",async (ctx,next)=>{
     let uname=ctx.session.loginedUser;
     if(uname==null) ctx.body=JSON.stringify(false);
@@ -259,6 +264,7 @@ Route.post("/setInfo",async (ctx,next)=>{
         //自己设置自己的信息 不包括用户type和密码
         obj["type"]=undefined;
         obj["password"]=undefined;
+        obj["username"]=undefined;
         SetUserInfo(uname,obj);
         return true;
     }
@@ -281,7 +287,7 @@ Route.post("/resetPass",async (ctx,next)=>{
 let upload=multer({
     dest:"./static/UserImg"
 })
-Route.post("/add",upload.single("file"),async (ctx,next)=>{
+Route.post("/uploadImg",upload.single("file"),async (ctx,next)=>{
     //此三个对象为file对象中的成员 具体成员需要在debug时查看
     const {originalname,path,mimetype}=ctx.req.file;
 
@@ -299,7 +305,7 @@ Route.get("/getUserInfo",async (ctx,next)=>{
     }
 })
 //设置某个特定用户的资料 根据用户级别控制
-//不能更改密码
+//不能更改密码和用户名
 Route.post("/setUserInfo",async (ctx,next)=>{
     let body=ctx.request.body;
     let uname=body.username;
@@ -308,7 +314,13 @@ Route.post("/setUserInfo",async (ctx,next)=>{
     let nowuser=ctx.session.loginedUser;
     if(nowuser==null) {ctx.body=false;return;}
     let nres=await UserModel.findOne({username:nowuser}).exec()
+    //如果有密码就先解码
+    if(body.password!=null)body=password=GetPassword(body.password);
+    //使用Write过滤器过滤系将写入的对象
+    //按用户权限过滤
     let nobj=WriteFilter(body,nres.type,wres.type)
+    //注意下面这个函数是个全功能函数，除了自带的针对密码的策略外
+    //可以修改任何内容
     SetUserInfo(uname,nobj);
 })
 //Admin特权接口
@@ -322,7 +334,8 @@ Route.post("/addUser",async (ctx,next)=>{
         //密码解码
         body.password=GetPassword(body.password)
         AddUser(body)
-        ctx.body=SVGFETurbulenceElement
+        ctx.body=true
+        return;
     }
     ctx.body=false;
 });
