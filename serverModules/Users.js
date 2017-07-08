@@ -76,7 +76,7 @@ async function GetUserInfo(uname)
 {
     assert.notEqual(uname,null)
     let res=await (UserModel.findOne({username:uname}).exec())
-    if(res==null) return;
+    if(res==null) return null;
     let obj=res.toObject()
     return obj
 }
@@ -301,7 +301,8 @@ Route.get("/getUserInfo",async (ctx,next)=>{
     else{
         let res=await UserModel.findOne({username:uname}).exec()
         let utype=res["type"]
-        ctx.body=await ReadFilter(GetUserInfo(uname),utype)
+        ctx.body=await ReadFilter(await GetUserInfo(uname),utype)
+        ctx.body=JSON.stringify(ctx.body)
     }
 })
 //设置某个特定用户的资料 根据用户级别控制
