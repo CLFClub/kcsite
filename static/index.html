@@ -60,6 +60,38 @@
                 }
             })
         }
+        const UserType={
+    Master:0,
+    Admin:1,
+    Techer:2,
+    Student:3,
+    Normal:4
+}
+        function adduser()
+        {
+            let form=document.getElementById("login")
+            let un=form.username.value;
+            let pas=form.password.value;
+            $.ajax({
+                method:"POST",
+                url:"/api/user/addUser",
+                data:{
+                    username:un,
+                    password:pas,
+                    type:UserType.Student,
+                    nickname:"hahah"
+                },
+                success(result){
+                    let state=JSON.parse(result)
+                    if(state==true)
+                    {
+                        alert("添加成功")
+                        
+                    }
+                    else alert("添加失败")
+                }
+            })
+        }
     </script>
 </head>
 <body>
@@ -69,6 +101,7 @@
     <input type="password" name="password">
     <br>
     <input type="button" value="提交" onclick="login()">
+    <input type="button" value="注册" onclick="adduser()">
     </form>
 <button onclick="getNowUser(false)">查看当前登录用户</button>
 <button onclick="getNowUser(true)">查看当前登录用户信息</button>

@@ -327,12 +327,13 @@ Route.post("/setUserInfo",async (ctx,next)=>{
 Route.post("/addUser",async (ctx,next)=>{
     let luname=ctx.session.loginedUser;
     if(luname==null) {ctx.body=false;return;}
-    if(luname<=UserType.Admin){
+    let res=await GetUserInfo(luname)
+    if(res.type<=UserType.Admin){
         //添加用户
         let body=ctx.request.body;
         if(body==null||body.password==null){ctx.body=false;return;}
         //密码解码
-        body.password=GetPassword(body.password)
+        body.password=await GetPassword(body.password)
         AddUser(body)
         ctx.body=true
         return;

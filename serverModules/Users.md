@@ -7,5 +7,5 @@ post /setInfo
 post /resetPass
 post /uploadImg //暂不可用
 get /getUserInfo
-post /addUser //admin特权
+post /addUser //admin特权 必须参数:username password nickname type
 post /setUserPass //master特权
