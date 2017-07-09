@@ -1,0 +1,152 @@
+* {
+    list-style: none;
+}
+
+@font-face {
+    font-family: FZPSH;
+    src: url('../fonts/FZPSHJW.ttf');
+}
+
+@font-face {
+    font-family: HYQiHei-50S;
+    src: url('../fonts/HYQiHei-50S.otf');
+}
+
+@font-face {
+    font-family: HYQiHei-60S;
+    src: url('../fonts/HYQiHei-60S.otf');
+}
+
+::-webkit-scrollbar {
+    display: none;
+}
+
+html {
+    font-size: 20px;
+}
+
+body {
+    margin: 0 auto;
+    color: white;
+    background-color: black;
+}
+
+#logo {
+    width: 2%;
+    height: 2%;
+}
+
+.navbar-wrapper {
+    margin: 0 auto;
+    padding-top: 32px;
+    position: fixed;
+    z-index: 999;
+    width: 100%;
+    text-align: center;
+    background: linear-gradient(to bottom, #000 0%, #000 50%, #000 51%, transparent 100%);
+    height: 90px;
+}
+
+.navbar-wrapper li {
+    display: inline-block;
+    vertical-align: middle;
+    font-size: 0.7rem;
+    font-family: "FZPSH", sans-serif;
+    font-family: bold;
+    margin-right: 80px;
+    display: inline-block;
+}
+
+.navbar-wrapper li:last-child {
+    letter-spacing: 0.1rem;
+}
+
+.navbar-wrapper a {
+    color: white;
+    text-decoration: none;
+    -webkit-transition: color 0.5s ease;
+    -moz-transition: color 0.5s ease;
+    -o-transition: color 0.5s ease;
+    transition: color 0.5s ease;
+}
+
+#intro {
+    background: url(../images/topbg.jpg);
+    background-size: cover;
+    overflow: hidden;
+}
+
+.intro-inf {
+    opacity: 0.9;
+    left: 20%;
+    right: 20%;
+    position: absolute;
+    top: 29%;
+    text-align: center;
+    z-index: 99;
+}
+
+.intro-inf h1 {
+    width: 100%;
+    font-size: 2.5rem;
+    font-weight: 500;
+    letter-spacing: 2rem;
+    display: inline-block;
+    font-family: "HYQiHei-70S";
+}
+
+.intro-inf p {
+    margin-top: 1.2rem;
+    font-size: 1.5rem;
+    font-family: "HYQiHei-50S";
+    letter-spacing: 2.5rem;
+    display: inline-block;
+}
+
+#intro video {
+    width: 100%;
+    display: block;
+    opacity: 0.3;
+}
+
+.mainbody {
+    background-image: url(../images/poly-bg.jpg);
+    padding: 200px 0px 50px 0px;
+}
+
+.information {
+    display: flex;
+    height: 100%;
+    flex-direction: row;
+    justify-content: space-around;
+    margin: 30px 35px 0px 35px;
+}
+
+.information1,
+.information2,
+.information3 {
+    padding: 24px;
+    width: 23%;
+    font-size: 1.2rem;
+    display: inline-block;
+    background: rgba(77, 72, 68, 0.2);
+    -webkit-box-shadow: -6px 6px 3px 0px rgb(28, 43, 61);
+    -moz-box-shadow: -6px 6px 3px 0px rgb(28, 43, 61);
+    -o-box-shadow: -6px 6px 3px 0px rgb(28, 43, 61);
+    -ms-box-shadow: -6px 6px 3px 0px rgb(28, 43, 61);
+    box-shadow: 0px 5px 9px 0px rgba(0, 0, 0, 0.68);
+}
+
+.information h3 {
+    font-size: 24px;
+    margin: 16px 0px;
+}
+
+.information p {
+    line-height: 26px;
+    text-indent: 48px;
+    text-align: left;
+    font-size: 18px;
+    font-family: "FZPSH";
+    font-weight: bold;
+}
